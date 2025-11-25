@@ -31,7 +31,8 @@ jobs:
         path: dist/*
 
     - name: Release
-      uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
-      with:
-        files: dist/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      run: |
+        gh release create ${{ github.ref_name }} dist/* --generate-notes
