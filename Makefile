@@ -86,6 +86,9 @@ dist: clean build-dist
 	@cd $(DIST_DIR) && \
 	for f in *.tar.gz; do \
 		sha256sum "$$f" > "$$f.sha256"; \
+	done && \
+	for f in *.zip; do \
+		sha256sum "$$f" > "$$f.sha256"; \
 	done
 
 
