@@ -24,6 +24,7 @@ const maxResponseBody = 512 * 1024
 
 func main() {
 
+	fmt.Println("flowtest.io worker")
 	fmt.Println("version: ", config.VERSION)
 
 	server := flag.String("server", "https://flowtest.io", "Flowtest server base URL")
