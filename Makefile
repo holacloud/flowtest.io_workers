@@ -61,9 +61,9 @@ dist: clean build-dist
 		GOARCH=$(word 2,$(subst /, ,$(target))) \
 		; \
 		if [ "$${GOOS}" = "windows" ]; then \
-			tar -czf $(DIST_DIR)/$(APP_NAME)-$(GIT_VERSION)-$${GOOS}-$${GOARCH}.tar.gz -C $(BIN_DIR) $(APP_NAME)-$(GIT_VERSION)-$${GOOS}-$${GOARCH}.exe; \
+			zip -j $(DIST_DIR)/$(APP_NAME)-$(GIT_VERSION)-$${GOOS}-$${GOARCH}.zip $(BIN_DIR)/$(APP_NAME)-$(GIT_VERSION)-$${GOOS}-$${GOARCH}.exe; \
 		else \
-			tar -czf $(DIST_DIR)/$(APP_NAME)-$(GIT_VERSION)-$${GOOS}-$${GOARCH}.tar.gz -C $(BIN_DIR) $(APP_NAME)-$(GIT_VERSION)-$${GOOS}-$${GOARCH}; \
+			zip -j $(DIST_DIR)/$(APP_NAME)-$(GIT_VERSION)-$${GOOS}-$${GOARCH}.zip $(BIN_DIR)/$(APP_NAME)-$(GIT_VERSION)-$${GOOS}-$${GOARCH}; \
 		fi; \
 	)
 
