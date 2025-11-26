@@ -69,7 +69,7 @@ func main() {
 			log.Printf("pull request error: %v", err)
 			time.Sleep(2 * time.Second)
 
-			workerID, err = registerWorker(ctx, serverClient, *server, *suite, *challenge, *workerName)
+			workerID, err = worker.RegisterWorker(ctx, serverClient, *server, *suite, *challenge, *workerName)
 			if err != nil {
 				log.Printf("register worker: %v", err)
 				time.Sleep(2 * time.Second)
@@ -95,93 +95,20 @@ func main() {
 	}
 }
 
-func registerWorker(ctx context.Context, client *http.Client, server, suite, challenge, name string) (string, error) {
-	payload := map[string]string{"suite_id": suite, "challenge": challenge}
-	trimmedName := strings.TrimSpace(name)
-	if trimmedName != "" {
-		payload["name"] = trimmedName
-	}
-	body, _ := json.Marshal(payload)
-	url := endpoint(server, "/agent/v1/workers/register")
-
-	for {
-		reqBody := bytes.NewReader(body)
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, reqBody)
-		if err != nil {
-			return "", err
-		}
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			if ctx.Err() != nil {
-				return "", ctx.Err()
-			}
-			log.Printf("register worker: %v; retrying in 5s", err)
-			if !sleepWithContext(ctx, 5*time.Second) {
-				return "", ctx.Err()
-			}
-			continue
-		}
-
-		data, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		if resp.StatusCode == http.StatusOK {
-			var result struct {
-				WorkerID string `json:"worker_id"`
-			}
-			if err := json.Unmarshal(data, &result); err != nil {
-				return "", err
-			}
-			if result.WorkerID == "" {
-				return "", errors.New("empty worker id returned")
-			}
-			return result.WorkerID, nil
-		}
-
-		trimmed := strings.TrimSpace(string(data))
-		if resp.StatusCode >= 500 || resp.StatusCode == http.StatusTooManyRequests {
-			if trimmed == "" {
-				trimmed = resp.Status
-			}
-			log.Printf("register worker failed (%d): %s; retrying in 5s", resp.StatusCode, trimmed)
-			if !sleepWithContext(ctx, 5*time.Second) {
-				return "", ctx.Err()
-			}
-			continue
-		}
-
-		if trimmed == "" {
-			trimmed = fmt.Sprintf("status %d", resp.StatusCode)
-		}
-		return "", fmt.Errorf("register worker failed: %s", trimmed)
-	}
-}
-
-func sleepWithContext(ctx context.Context, delay time.Duration) bool {
-	timer := time.NewTimer(delay)
-	defer timer.Stop()
-	select {
-	case <-ctx.Done():
-		return false
-	case <-timer.C:
-		return true
-	}
-}
-
 func pullRequest(ctx context.Context, client *http.Client, server, workerID string) (*worker.ProxyRequest, error) {
-	url := endpoint(server, fmt.Sprintf("/agent/v1/workers/%s/pull", workerID))
+	url := worker.Endpoint(server, fmt.Sprintf("/agent/v1/workers/%s/pull", workerID))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
 
 	resp, err := client.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNoContent {
 		return nil, nil
@@ -241,7 +168,7 @@ func executeRequest(ctx context.Context, client *http.Client, proxyReq *worker.P
 
 func submitResponse(ctx context.Context, client *http.Client, server, workerID string, response *worker.ProxyResponse) error {
 	body, _ := json.Marshal(response)
-	url := endpoint(server, fmt.Sprintf("/agent/v1/workers/%s/result", workerID))
+	url := worker.Endpoint(server, fmt.Sprintf("/agent/v1/workers/%s/result", workerID))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return err
@@ -249,19 +176,16 @@ func submitResponse(ctx context.Context, client *http.Client, server, workerID s
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		data, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("submit failed: %s", strings.TrimSpace(string(data)))
 	}
 	return nil
-}
-
-func endpoint(base, path string) string {
-	trimmed := strings.TrimRight(base, "/")
-	return trimmed + path
 }
