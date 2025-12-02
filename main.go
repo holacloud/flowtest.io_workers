@@ -32,7 +32,14 @@ func main() {
 	challenge := flag.String("challenge", "", "Challenge")
 	workerName := flag.String("name", "", "Human-friendly identifier for this worker")
 	timeout := flag.Duration("timeout", 30*time.Second, "HTTP timeout for proxied requests")
+	version := flag.Bool("version", false, "Show version")
+
 	flag.Parse()
+
+	if *version {
+		fmt.Println(config.VERSION)
+		os.Exit(0)
+	}
 
 	if strings.TrimSpace(*suite) == "" {
 		log.Fatal("suite id is required (use -suite)")
