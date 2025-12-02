@@ -16,8 +16,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/holacloud/flowtest_workers/config"
-	"github.com/holacloud/flowtest_workers/worker"
+	"github.com/holacloud/flowtestagent/config"
+	"github.com/holacloud/flowtestagent/worker"
 )
 
 const maxResponseBody = 512 * 1024

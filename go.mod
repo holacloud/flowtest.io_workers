@@ -1,3 +1,3 @@
-module github.com/holacloud/flowtest_workers
+module github.com/holacloud/flowtestagent
 
 go 1.25.4

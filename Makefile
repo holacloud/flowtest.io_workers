@@ -24,7 +24,7 @@ version:
 
 # dist
 
-APP_NAME := ft_worker
+APP_NAME := flowtestagent
 DIST_DIR := dist
 BIN_DIR := bin
 GOOSARCH := \
@@ -32,6 +32,7 @@ GOOSARCH := \
 	linux/arm64 \
 	darwin/amd64 \
 	darwin/arm64 \
+	windows/arm64 \
 	windows/amd64
 
 .PHONY: all clean build dist
@@ -50,7 +51,7 @@ build-dist:
 		BIN=$(APP_NAME)-$(GIT_VERSION)-$${GOOS}-$${GOARCH}; \
 		if [ "$${GOOS}" = "windows" ]; then BIN="$(APP_NAME)-$(GIT_VERSION)-$${GOOS}-$${GOARCH}.exe"; fi; \
 		echo "  → Building $${GOOS}/$${GOARCH}"; \
-		GOOS=$${GOOS} GOARCH=$${GOARCH} go build $(FLAGS) -o $(BIN_DIR)/$${BIN}; \
+		CGO_ENABLED=0 GOOS=$${GOOS} GOARCH=$${GOARCH} go build $(FLAGS) -o $(BIN_DIR)/$${BIN}; \
 	)
 
 dist: clean build-dist
